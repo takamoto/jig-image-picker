@@ -1,0 +1,103 @@
+# Sample settings file for jig-image-picker.
+#
+# To use it, copy it to ~/.config/jig-image-picker/config.yaml and edit it
+# (the location can be changed with JIG_IMAGE_PICKER_CONFIG).
+#
+# Every field is required. The intent is to gather shared values in defaults, then <<: *defaults in each profile and write only what differs.
+# You can verify it with jig-image-picker --check {profile name}.
+
+defaults: &defaults
+  # Conditions for the image files that appear in the list
+  entrySources:
+    - type: directory
+      path: ~/Pictures
+      recursive: false
+  # newest / oldest / name / nameDescending
+  sortOrder: newest
+  itemLayout:
+    # Length of one side of the Thumbnail (px)
+    thumbnailSize: 200
+    # fit (shrink so the whole image fits) / fill (expand to fill the cell and crop the long side)
+    thumbnailContentMode: fit
+    # Whether to show the file name and modification date
+    showItemInfo: true
+  dateFormat:
+    # A Unicode date format pattern
+    #   (Ref. https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Format_Patterns )
+    format: "yyyy/MM/dd HH:mm:ss"
+    # A Unicode locale identifier or an ICU locale ID
+    #   (Ref. https://www.unicode.org/reports/tr35/#Unicode_locale_identifier )
+    #   (Ref. https://unicode-org.github.io/icu/userguide/locale/ )
+    locale: ja_JP
+  window: { width: 960, height: 640 }
+  # image (image data) / file (file reference) / path (path string)
+  clipboardContentType: image
+  # Mapping from Key Name → Action
+  # Action: copy / cancel / quickLook / trash / previous / next / previousRow / nextRow
+  keyBindings:
+    return: copy
+    enter: copy
+    escape: cancel
+    cmd+y: quickLook
+    cmd+delete: trash
+    left: previous
+    right: next
+    up: previousRow
+    ctrl+p: previousRow
+    down: nextRow
+    ctrl+n: nextRow
+
+# The profile used when no profile name is given explicitly
+defaultProfile: pictures
+
+profiles:
+  pictures:
+    <<: *defaults
+
+  # You can specify a folder.
+  desktop:
+    <<: *defaults
+    entrySources:
+      - type: directory
+        path: ~/Desktop
+        # Subfolders can be included too.
+        recursive: true
+
+  # You can specify a Finder smart folder.
+  # Changes made to the smart folder in Finder take effect from the next launch.
+  smart-folder:
+    <<: *defaults
+    entrySources:
+      - type: smartFolder
+        path: ~/Library/Saved Searches/all-images.savedSearch
+
+  # You can specify a Spotlight search query directly.
+  screenshots:
+    <<: *defaults
+    entrySources:
+      - type: spotlightSearch
+        # Corresponds to the query in `mdfind -literal {query}`.
+        # The example below targets only macOS screenshots (judged by the metadata attribute macOS attaches).
+        query: 'kMDItemIsScreenCapture == 1'
+        # Corresponds to mdfind's `-onlyin` option.
+        # Specifically, you can specify several of the following.
+        # - Folder paths (`~` is allowed)
+        # - Constant names such as kMDQueryScopeHome / kMDQueryScopeComputer
+        #   (Ref. https://developer.apple.com/documentation/coreservices/file_metadata/mdquery/query_search_scope_keys )
+        scopes: [kMDQueryScopeHome]
+
+  # You can specify multiple conditions at once.
+  # Even if one image file matches several conditions, it appears only once in the list.
+  mixed:
+    <<: *defaults
+    entrySources:
+      - type: directory
+        path: ~/Pictures
+        recursive: false
+      - type: spotlightSearch
+        query: 'kMDItemContentTypeTree == "public.image"'
+        scopes: [kMDQueryScopeHome]
+    itemLayout:
+      thumbnailSize: 120
+      thumbnailContentMode: fill
+      showItemInfo: false
